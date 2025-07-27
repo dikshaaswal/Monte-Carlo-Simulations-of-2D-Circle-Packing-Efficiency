@@ -1,0 +1,1 @@
+This project explores the statistical and geometric efficiency of packing 2D circles using Monte Carlo (MC) simulations. The goal is to understand how particle size distribution, system boundaries, and simulation scale impact packing density in monolayers — a topic critical to many industrial applications such as retroreflective coatings, paints, and thin films.
