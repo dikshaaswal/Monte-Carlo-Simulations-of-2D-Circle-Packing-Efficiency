@@ -48,6 +48,56 @@ def place_circles_bc1(truncated_diameters, total_skips, max_attempts, sheet_widt
 
 
 
+def place_circles_bc1_kdtree(truncated_diameters, total_skips, max_attempts, sheet_width, sheet_height):
+    allocated_circles = []  # ← same as original
+    centers = []            # (x, y) coordinates for KDTree
+    radii = []              # to keep corresponding radii
+    attempts_dict = defaultdict(int)
+    
+    np.random.seed(42)
+    total_tries = 0
+    tree = None  # KDTree object, starts empty
+
+    while total_tries < total_skips:
+        diameter = np.random.choice(truncated_diameters)
+        attempts = 0
+
+        while attempts < max_attempts:
+            radius = diameter / 2
+            x = np.random.uniform(radius, sheet_width - radius)
+            y = np.random.uniform(radius, sheet_height - radius)
+            new_center = [x, y]
+
+            #Optimized Overlap Check
+            if tree:
+                # Query neighbors only within possible overlapping distance
+                possible_idx = tree.query_ball_point(new_center, r=radius+(truncated_diameters.max())/2)
+                overlap = False
+                for idx in possible_idx:
+                    x2, y2 = centers[idx]
+                    r2 = radii[idx]
+                    dist_sq = (x2 - x)**2 + (y2 - y)**2
+                    if dist_sq < (radius + r2)**2:
+                        overlap = True
+                        break
+                if overlap:
+                    attempts += 1
+                    continue
+
+            # No overlap or first circle
+            allocated_circles.append((x, y, radius))
+            centers.append(new_center)
+            radii.append(radius)
+            tree = cKDTree(centers)  # 🛠 Rebuild tree after adding new circle
+            attempts_dict[attempts] += 1
+            break
+
+        if attempts == max_attempts:
+            total_tries += 1
+            print(f"❌ Skipped a circle after {max_attempts} attempts. Skip count: {total_tries}")
+
+    return allocated_circles, attempts_dict
+
 ###new condition for stopping criteria 
 def place_circles_1(truncated_diameters,  max_attempts, sheet_width, sheet_height):
     allocated_circles = []
